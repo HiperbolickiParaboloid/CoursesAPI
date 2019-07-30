@@ -25,9 +25,7 @@ class Course(Resource):
 
     def post(self, name):       #posts new course
         try:
-            # Ako dodamo force=True, nije neophodno da se salje Content-Type:"application/json"
-            # Ako dodamo silent=True, vraca umjesto greske None (null)
-            request_data = request.get_json() # ako ne setujemo u zahtjevu Content-Type:"application/json" ili posaljemo invalid JSON, greska
+            request_data = request.get_json()
             new_course = {
                 "name": helpers.set_name(request_data["name"]),
                 "description": helpers.set_description(request_data["description"]),
