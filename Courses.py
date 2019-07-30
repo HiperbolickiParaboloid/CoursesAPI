@@ -130,8 +130,6 @@ class CourseINC(Resource):      #increses field "quantity" by one, for specified
         try:
             course = list(mycol_courses.find({"_id": ObjectId(_id)}))
             if len(course) > 0:
-                #quantity = int(course[0]["quantity"])
-                #new_quantity = quantity+1
                 mycol_courses.update_one({"_id": ObjectId(_id)}, {"$set": {"quantity": (course[0]["quantity"]+1)}})
                 return {"message": "Updated"}, 200
             else:
@@ -144,8 +142,6 @@ class CourseDEC(Resource):      #decreses field "quantity" by one, for specified
         try:
             course = list(mycol_courses.find({"_id": ObjectId(_id)}))
             if len(course) > 0:
-                #quantity = int(course[0]["quantity"])
-                #new_quantity = quantity
                 mycol_courses.update_one({"_id": ObjectId(_id)}, {"$set": {"quantity": (course[0]["quantity"]-1)}})
                 return {"message": "Updated"}, 200
             else:
