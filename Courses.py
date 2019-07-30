@@ -24,6 +24,18 @@ req = {
                "description": "must be a number and is required",
                "minimum": 1,
                "maximum": 10000
+            },
+            "description": {
+               "bsonType": "string",
+               "description": "must be a string and is not required",
+               "minLength": 10,
+               "maxLength": 150
+            },
+            "quantity": {
+               "bsonType": "int",
+               "description": "must be a number and is not required",
+               "minLength": 0,
+               "maxLength": 50
             }
           }
       }
@@ -53,20 +65,11 @@ class Course(Resource):
             new_course = {
                 "name": name,
                 "price": request_data["price"],
-                "description": request_data["description"],
-                "quantity": request_data["quantity"]
             }
-            '''
-            #if new_course["name"] == False:
-             #   return {"error": "Wrong name!"}, 404
-            #elif new_course["description"] == False:
-                #return {"error": "Wrong description!"}, 404
-            #elif new_course["price"] == False:
-             #   return {"error": "Wrong price!"}, 404
-            elif new_course["quantity"] == False:
-                return {"error": "Wrong quantity!"}, 404
-            else:
-                '''
+            if "description" in request_data.keys():
+                new_course.update({"description": helpers.set_description(request_data["description"])})
+            if "quantity" in request_data.keys():
+                new_course.update({"quantity": helpers.set_quantity(request_data["quantity"])})
             mycol_courses.insert_one(new_course)
             return dumps(new_course), 201
         except Exception as e:
