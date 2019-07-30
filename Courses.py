@@ -7,7 +7,33 @@ import pymongo
 
 myclient = pymongo.MongoClient("mongodb://localhost:27017/")
 mydb = myclient["CoursesAPI"]
-mycol_courses = mydb["courses"]
+
+req = {
+      "$jsonSchema": {
+          "bsonType": "object",
+          "required": ["name", "price"],
+          "properties": {
+            "name": {
+               "bsonType": "string",
+               "description": "must be a string and is required",
+               "minLength": 3,
+               "maxLength": 15
+            },
+            "price": {
+               "bsonType": "double",
+               "description": "must be a number and is required",
+               "minimum": 1,
+               "maximum": 10000
+            }
+          }
+      }
+    }
+
+if not "courses" in mydb.list_collection_names():
+    mycol = mydb.create_collection("courses", validator = req)
+    mycol.create_index("name", unique=True)
+else:
+    mycol_courses = mydb["courses"]
 
 class Course(Resource):
     def get(self, name):        #returns course for specified name
@@ -25,22 +51,24 @@ class Course(Resource):
         try:
             request_data = request.get_json()
             new_course = {
-                "name": helpers.set_name(request_data["name"]),
-                "description": helpers.set_description(request_data["description"]),
-                "price": helpers.set_price(request_data["price"]),
-                "quantity": helpers.set_quantity(request_data["quantity"])
+                "name": name,
+                "price": request_data["price"],
+                "description": request_data["description"],
+                "quantity": request_data["quantity"]
             }
-            if new_course["name"] == False:
-                return {"error": "Wrong name!"}, 404
-            elif new_course["description"] == False:
-                return {"error": "Wrong description!"}, 404
-            elif new_course["price"] == False:
-                return {"error": "Wrong price!"}, 404
+            '''
+            #if new_course["name"] == False:
+             #   return {"error": "Wrong name!"}, 404
+            #elif new_course["description"] == False:
+                #return {"error": "Wrong description!"}, 404
+            #elif new_course["price"] == False:
+             #   return {"error": "Wrong price!"}, 404
             elif new_course["quantity"] == False:
                 return {"error": "Wrong quantity!"}, 404
             else:
-                mycol_courses.insert_one(new_course)
-                return dumps(new_course), 201
+                '''
+            mycol_courses.insert_one(new_course)
+            return dumps(new_course), 201
         except Exception as e:
             return {"error": str(e)}, 400
 
