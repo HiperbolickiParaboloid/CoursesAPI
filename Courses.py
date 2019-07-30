@@ -8,10 +8,8 @@ import pymongo
 myclient = pymongo.MongoClient("mongodb://localhost:27017/")
 mydb = myclient["CoursesAPI"]
 mycol_courses = mydb["courses"]
-#mycol_teachers = mydb["teachers"]
 
 class Course(Resource):
-
     def get(self, name):        #returns course for specified name
         try:
             course = list(mycol_courses.find({"name": name}))
