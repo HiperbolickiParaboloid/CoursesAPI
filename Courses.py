@@ -11,7 +11,7 @@ mydb = myclient["CoursesAPI"]
 req = {
       "$jsonSchema": {
           "bsonType": "object",
-          "required": ["name", "price"],
+          "required": ["_id", "name", "price"],
           "properties": {
             "name": {
                "bsonType": "string",
@@ -131,7 +131,7 @@ class CourseINC(Resource):      #increses field "quantity" by one, for specified
             course = list(mycol_courses.find({"_id": ObjectId(_id)}))
             if len(course) > 0:
                 quantity = int(course[0]["quantity"])
-                new_quantity = str(quantity+1)
+                new_quantity = quantity+1
                 mycol_courses.update_one({"_id": ObjectId(_id)}, {"$set": {"quantity": new_quantity}})
                 return {"message": "Updated"}, 200
             else:
@@ -145,7 +145,7 @@ class CourseDEC(Resource):      #decreses field "quantity" by one, for specified
             course = list(mycol_courses.find({"_id": ObjectId(_id)}))
             if len(course) > 0:
                 quantity = int(course[0]["quantity"])
-                new_quantity = str(quantity-1)
+                new_quantity = quantity
                 mycol_courses.update_one({"_id": ObjectId(_id)}, {"$set": {"quantity": new_quantity}})
                 return {"message": "Updated"}, 200
             else:
