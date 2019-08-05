@@ -4,6 +4,9 @@ from bson.json_util import dumps
 from bson.objectid import ObjectId
 import helpers
 import pymongo
+import os
+from werkzeug.utils import secure_filename
+
 
 myclient = pymongo.MongoClient("mongodb://localhost:27017/")
 mydb = myclient["CoursesAPI"]
@@ -36,6 +39,10 @@ req = {
                "description": "must be a number and is not required",
                "minLength": 0,
                "maxLength": 50
+            },
+            "image":{
+                "bsonType": "string",
+                "description": "must be a string and is not required"
             }
           }
       }
@@ -47,7 +54,19 @@ if not "courses" in mydb.list_collection_names():
 else:
     mycol_courses = mydb["courses"]
 
+class Image(Resource):      #upload pictures (files) via Postman
+    def post(self):
+        try:
+            f = request.files["file"]
+            filename = secure_filename(f.filename)
+            path = os.path.dirname(os.path.abspath(__file__))
+            f.save(os.path.join(path, "static/images", filename))
+            return "File successfully saved."
+        except Exception as e:
+            return {"error": str(e)}, 400
+
 class Course(Resource):
+
     def get(self, name):        #returns course for specified name
         try:
             course = list(mycol_courses.find({"name": name}))
@@ -58,16 +77,19 @@ class Course(Resource):
         except Exception as e:
             return {"error": str(e)}, 400
 
-
     def post(self, name):       #posts new course
         try:
             request_data = request.get_json()
             new_course = {
-                "name": name,
+                "name": request_data["name"],
                 "price": request_data["price"],
+                "image": "/images/default.jpg",
+                "quantity": 0
             }
             if "description" in request_data.keys():
                 new_course.update({"description": helpers.set_description(request_data["description"])})
+            if "image" in request_data.keys():
+                new_course.update({"image": request_data["image"]})
             if "quantity" in request_data.keys():
                 new_course.update({"quantity": helpers.set_quantity(request_data["quantity"])})
             mycol_courses.insert_one(new_course)
