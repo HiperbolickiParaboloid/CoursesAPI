@@ -75,6 +75,16 @@ class Course(Resource):
         except Exception as e:
             return {"error": str(e)}, 400
 
+    def delete(self, name):
+        try:
+            student = mycol_courses.find_one_and_delete({"name": name})
+            if student:
+                return {"message": "Course has been deleted."}, 200
+            else:
+                return {"message": "Course with this name not found."}, 404
+        except Exception as e:
+            return {"error": str(e)}, 400
+
 class CoursesList(Resource):        #returns whole list of courses
 
     def get(self):
@@ -96,6 +106,16 @@ class CourseID(Resource):       #returns course for specified id
                 return dumps(course), 200
             else:
                 return None, 404
+        except Exception as e:
+            return {"error": str(e)}, 400
+
+    def delete(self, _id):
+        try:
+            student = mycol_courses.find_one_and_delete({"_id": ObjectId(_id)})
+            if student:
+                return {"message": "Student deleted."}, 200
+            else:
+                return {"message": "Student with this ID not found."}, 404
         except Exception as e:
             return {"error": str(e)}, 400
 
