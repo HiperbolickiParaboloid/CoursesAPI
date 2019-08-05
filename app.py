@@ -12,5 +12,6 @@ api.add_resource(Courses.CourseNUM, "/subs_num/<string:_id>")
 api.add_resource(Courses.CoursesLimit, "/courses")
 api.add_resource(Courses.CourseINC, "/subs_inc/<string:_id>")
 api.add_resource(Courses.CourseDEC, "/subs_dec/<string:_id>")
+api.add_resource(Courses.Image, "/images")
 
 app.run(port=5000, debug=True)
