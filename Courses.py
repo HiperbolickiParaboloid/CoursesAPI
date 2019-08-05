@@ -113,9 +113,9 @@ class CourseID(Resource):       #returns course for specified id
         try:
             student = mycol_courses.find_one_and_delete({"_id": ObjectId(_id)})
             if student:
-                return {"message": "Student deleted."}, 200
+                return {"message": "Course deleted."}, 200
             else:
-                return {"message": "Student with this ID not found."}, 404
+                return {"message": "Course with this ID not found."}, 404
         except Exception as e:
             return {"error": str(e)}, 400
 
