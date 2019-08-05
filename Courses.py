@@ -77,8 +77,8 @@ class Course(Resource):
 
     def delete(self, name):
         try:
-            student = mycol_courses.find_one_and_delete({"name": name})
-            if student:
+            course = mycol_courses.find_one_and_delete({"name": name})
+            if course:
                 return {"message": "Course has been deleted."}, 200
             else:
                 return {"message": "Course with this name not found."}, 404
@@ -111,11 +111,31 @@ class CourseID(Resource):       #returns course for specified id
 
     def delete(self, _id):
         try:
-            student = mycol_courses.find_one_and_delete({"_id": ObjectId(_id)})
-            if student:
+            course = mycol_courses.find_one_and_delete({"_id": ObjectId(_id)})
+            if course:
                 return {"message": "Course deleted."}, 200
             else:
                 return {"message": "Course with this ID not found."}, 404
+        except Exception as e:
+            return {"error": str(e)}, 400
+
+    def put(self, _id):
+        try:
+            request_data = request.get_json()
+            course = list(mycol_courses.find({"_id": ObjectId(_id)}))
+            new_course = {
+                "name": request_data["name"],
+                "price": request_data["price"]
+            }
+            if "description" in request_data.keys():
+                new_course.update({"description": helpers.set_description(request_data["description"])})
+            if "quantity" in request_data.keys():
+                new_course.update({"quantity": helpers.set_quantity(request_data["quantity"])})
+            if not course:
+                return {"message": "Course with this ID not found."}, 404       #can not insert new course by id, it's senseless, than just returns simple message
+            else:
+                mycol_courses.update_one({"_id": ObjectId(_id)}, {"$set": new_course})      #updates selected course
+                return {"message": "Selected course has been updated."}, 200
         except Exception as e:
             return {"error": str(e)}, 400
 
@@ -151,7 +171,7 @@ class CourseINC(Resource):      #increses field "quantity" by one, for specified
             course = list(mycol_courses.find({"_id": ObjectId(_id)}))
             if len(course) > 0:
                 mycol_courses.update_one({"_id": ObjectId(_id)}, {"$set": {"quantity": (course[0]["quantity"]+1)}})
-                return {"message": "Updated"}, 200
+                return {"message": "Updated quantity for the selected course."}, 200
             else:
                 return None, 404
         except Exception as e:
@@ -163,7 +183,7 @@ class CourseDEC(Resource):      #decreses field "quantity" by one, for specified
             course = list(mycol_courses.find({"_id": ObjectId(_id)}))
             if len(course) > 0:
                 mycol_courses.update_one({"_id": ObjectId(_id)}, {"$set": {"quantity": (course[0]["quantity"]-1)}})
-                return {"message": "Updated"}, 200
+                return {"message": "Updated quantity for the selected course."}, 200
             else:
                 return None, 404
         except Exception as e:
