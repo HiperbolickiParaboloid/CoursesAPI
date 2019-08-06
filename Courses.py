@@ -4,14 +4,51 @@ from bson.json_util import dumps
 from bson.objectid import ObjectId
 import helpers
 import pymongo
+import inspect
 
 myclient = pymongo.MongoClient("mongodb://localhost:27017/")
 mydb = myclient["CoursesAPI"]
-mycol_courses = mydb["courses"]
-#mycol_teachers = mydb["teachers"]
+
+req = {
+      "$jsonSchema": {
+          "bsonType": "object",
+          "required": ["name", "price"],
+          "properties": {
+            "name": {
+               "bsonType": "string",
+               "description": "must be a string and is required",
+               "minLength": 3,
+               "maxLength": 15
+            },
+            "price": {
+               "bsonType": "double",
+               "description": "must be a number and is required",
+               "minimum": 1,
+               "maximum": 10000
+            },
+            "description": {
+               "bsonType": "string",
+               "description": "must be a string and is not required",
+               "minLength": 10,
+               "maxLength": 150
+            },
+            "quantity": {
+               "bsonType": "int",
+               "description": "must be a number and is not required",
+               "minLength": 0,
+               "maxLength": 50
+            }
+          }
+      }
+    }
+
+if not "courses" in mydb.list_collection_names():
+    mycol = mydb.create_collection("courses", validator = req)
+    mycol.create_index("name", unique=True)
+else:
+    mycol_courses = mydb["courses"]
 
 class Course(Resource):
-
     def get(self, name):        #returns course for specified name
         try:
             course = list(mycol_courses.find({"name": name}))
@@ -25,26 +62,51 @@ class Course(Resource):
 
     def post(self, name):       #posts new course
         try:
-            # Ako dodamo force=True, nije neophodno da se salje Content-Type:"application/json"
-            # Ako dodamo silent=True, vraca umjesto greske None (null)
-            request_data = request.get_json() # ako ne setujemo u zahtjevu Content-Type:"application/json" ili posaljemo invalid JSON, greska
-            new_course = {
-                "name": helpers.set_name(request_data["name"]),
-                "description": helpers.set_description(request_data["description"]),
-                "price": helpers.set_price(request_data["price"]),
-                "quantity": helpers.set_quantity(request_data["quantity"])
-            }
-            if new_course["name"] == False:
-                return {"error": "Wrong name!"}, 404
-            elif new_course["description"] == False:
-                return {"error": "Wrong description!"}, 404
-            elif new_course["price"] == False:
-                return {"error": "Wrong price!"}, 404
-            elif new_course["quantity"] == False:
-                return {"error": "Wrong quantity!"}, 404
+            teacher_caller=0
+            for elem in inspect.stack():
+                if "Teachers" in elem: 
+                    teacher_caller=1
+                    break
+
+            if teacher_caller==0:
+                request_data = request.get_json()
             else:
-                mycol_courses.insert_one(new_course)
+                request_data=name
+
+
+            new_course = {
+                "name": request_data["name"],
+                "price": request_data["price"],
+            }
+            if "description" in request_data.keys():
+                new_course.update({"description": helpers.set_description(request_data["description"])})
+            if "quantity" in request_data.keys():
+                new_course.update({"quantity": helpers.set_quantity(request_data["quantity"])})
+            mycol_courses.insert_one(new_course)
+
+            
+            if teacher_caller==0:
                 return dumps(new_course), 201
+
+            else:
+                myquery = {"name":request_data["name"]}
+                newvalues = {"teacher": request_data["id_teacher"]}
+                mycol_courses.update_one(myquery ,newvalues)
+                return mycol_courses.find({"name":request_data["name"]})['_id']
+            
+
+            
+        except Exception as e:
+            return {"error": str(e)}, 400
+
+#delete by id for teachers put method
+    def delete_by_id(self, _id):
+        try:
+            course = mycol.find_one_and_delete({"_id": _id})
+            if course:
+                return {"message": "Course deleted."}, 200
+            else:
+                return {"message": "Course with this name not found."}, 404
         except Exception as e:
             return {"error": str(e)}, 400
 
@@ -103,9 +165,7 @@ class CourseINC(Resource):      #increses field "quantity" by one, for specified
         try:
             course = list(mycol_courses.find({"_id": ObjectId(_id)}))
             if len(course) > 0:
-                quantity = int(course[0]["quantity"])
-                new_quantity = str(quantity+1)
-                mycol_courses.update_one({"_id": ObjectId(_id)}, {"$set": {"quantity": new_quantity}})
+                mycol_courses.update_one({"_id": ObjectId(_id)}, {"$set": {"quantity": (course[0]["quantity"]+1)}})
                 return {"message": "Updated"}, 200
             else:
                 return None, 404
@@ -117,9 +177,7 @@ class CourseDEC(Resource):      #decreses field "quantity" by one, for specified
         try:
             course = list(mycol_courses.find({"_id": ObjectId(_id)}))
             if len(course) > 0:
-                quantity = int(course[0]["quantity"])
-                new_quantity = str(quantity-1)
-                mycol_courses.update_one({"_id": ObjectId(_id)}, {"$set": {"quantity": new_quantity}})
+                mycol_courses.update_one({"_id": ObjectId(_id)}, {"$set": {"quantity": (course[0]["quantity"]-1)}})
                 return {"message": "Updated"}, 200
             else:
                 return None, 404
