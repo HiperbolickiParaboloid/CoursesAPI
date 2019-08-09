@@ -4,33 +4,79 @@ from bson.json_util import dumps
 from bson.objectid import ObjectId
 import pymongo
 import funct
-import valid
 import Courses
+myclient = pymongo.MongoClient("mongodb://localhost:27017/")
+mydb = myclient["CoursesAPI"]
+
+'''
+schem = {
+      "$jsonSchema": {
+          "bsonType": "object",
+          "required": [ "username", "password", "email", "role"],
+          "properties": {
+            "username": {
+               "bsonType": "string",
+               "description": "must be a string and is required",
+               "minLength": 3,
+               "maxLength": 20
+            },
+            "password": {
+               "bsonType": "string",
+               "description": "must be a string and is required",
+               "minLength": 5,
+               "maxLength": 25,
+               
+            },
+            "email": {
+               "bsonType": "string",
+               "description": "must be a string and is required",
+               "minLength": 5,
+               "maxLength": 35
+            },
+            "role": {
+               "bsonType": "int",
+               "description": "must be a number and is required",
+               "minimum": 0,
+               "maximum": 1
+            },
+            "course": {
+                "bsonType": "array",
+                "description": "must be array and not required"
+            }
+          }
+      }
+    }
+'''
+
+
+if not "teachers" in mydb.list_collection_names():
+    mycol_teachers = mydb.create_collection("teachers")
+    mycol_teachers.create_index("username", unique=True)
+    
+else:
+    mycol_teachers = mydb["teachers"]
 
 def add_course(request_data):
     id_course=[]
-    id_teacher=list(mycol_teachers.find({"username": username}, {"_id":1 }))[0]
-
+    
+    id_teacher=list((list(mycol_teachers.find({"username": request_data["username"]}, {"_id":1 }))[0]).values())[0]
+    call=Courses.Course()
+   
     for elem in request_data["course"]:
-        elem.update("id_techer":id_teacher)
-        id_course.append(Courses.Course.post(elem))
-                
-    mycol_teachers.update_one({"username":username},{"$set": {"course": id_course})
+        
+        elem.update({"id_teacher":id_teacher})
+        
+        id_course.append(call.post(elem))
+        
 
-if __name__ == "__main__":
-    myclient = pymongo.MongoClient("mongodb://localhost:27017/")
-    mydb = myclient["CoursesAPI"]
-
-if not "teachers" in mydb.list_collection_names():
-    mycol = mydb.create_collection("teachers", validator = valid.schema)
-    mycol.create_index("username", unique=True)
-else:
-    mycol_teachers = mydb["teachers"]
+    myquery = {"username": request_data["username"]}
+    newvalues = {"$set": {"course": id_course}}          
+    mycol_teachers.update_one(myquery, newvalues)
 
 class Teacher(Resource):
     def get(self, username):
         try:
-            teacher = list(mycol_courses.find({"username": username}))
+            teacher = list(mycol_teachers.find({"username": username}))
             if len(teacher) > 0:
                 return dumps(teacher), 200
             else:
@@ -41,13 +87,12 @@ class Teacher(Resource):
         try:
             request_data = request.get_json()
             new_teacher = {
-                "username": username,
+                "username": request_data["username"],
                 "password": funct.encoding(request_data["password"]),
                 "email"   : request_data["email"],
                 "role"    : request_data["role"]
             }
             mycol_teachers.insert_one(new_teacher)
-
             if "course" in request_data.keys():
                 add_course(request_data)
                     
@@ -58,7 +103,7 @@ class Teacher(Resource):
 
     def delete(self, username):
         try:
-            teacher= mycol.find_one_and_delete({"username": username})
+            teacher= mycol_teachers.find_one_and_delete({"username": username})
             if teacher:
                 return {"message": "Teacher deleted."}, 200
             else:
@@ -69,7 +114,9 @@ class Teacher(Resource):
     def put(self, username):
         try:
             request_data = request.get_json()
-            teacher = mycol_teachers.find({"username": username})
+            
+            teacher = list(mycol_teachers.find({"username": username}))
+            
             name = username    #because line 86
             updated_teacher = {
             "username":request_data["username"] if request_data["username"] else teacher["username"] ,
@@ -77,30 +124,37 @@ class Teacher(Resource):
             "email":request_data["email"] if request_data["email"] else teacher["email"] ,
             "role":request_data["role"] if request_data["role"] else teacher["role"]
             }
+           
             if not teacher:
                 mycol_teachers.insert_one(updated_teacher)
-                if request_data["course"]:
+                if "course" in request_data.keys():
                     add_course(request_data)
                 return dumps(updated_teacher), 201
             else:
+                
                 mycol_teachers.update_one({"username": name}, {"$set": updated_teacher})  #searching by old username for old courses
-                return {"message": "Teacher updated"}, 200
-                if request_data["course"]:
-                    if teacher["course"]:
+                if "course" in request_data.keys():
+                    if "course" in teacher[0].keys():
                         for course_id in teacher["course"]:
-                            Courses.Course.delete_by_id(course_id)
-                    
-                    add_course(request_data)
+                            
+                            call=Courses.Course()
+                            call.delete_by_id(course_id)
+                            
+                    add_course(request_data)                
                 return dumps(updated_teacher), 201
+        except Exception as e:
+            return {"error": str(e)}, 400
     
-    class TeachersList(Resource):
+class TeachersList(Resource):
+
     def get(self):
         try:
-            teachers= list(mycol.find())
+            teachers= list(mycol_teachers.find())
             if teachers:
                 return dumps(teachers), 200
             else:
                 return {"message": "No teachers found."}, 404
         except Exception as e:
             return dumps({"error": str(e)})
+
 

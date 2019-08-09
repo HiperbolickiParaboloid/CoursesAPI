@@ -5,10 +5,10 @@ from bson.objectid import ObjectId
 import helpers
 import pymongo
 import inspect
-if __name__ == "__main__":
-    myclient = pymongo.MongoClient("mongodb://localhost:27017/")
-    mydb = myclient["CoursesAPI"]
 
+myclient = pymongo.MongoClient("mongodb://localhost:27017/")
+mydb = myclient["CoursesAPI"]
+'''
 req = {
       "$jsonSchema": {
           "bsonType": "object",
@@ -37,13 +37,18 @@ req = {
                "description": "must be a number and is not required",
                "minLength": 0,
                "maxLength": 50
+            },
+            "teacher":{
+                "bsonType": "string",
+                "description": "must be string and not required"
+                
             }
           }
       }
     }
-
+'''
 if not "courses" in mydb.list_collection_names():
-    mycol = mydb.create_collection("courses", validator = req)
+    mycol = mydb.create_collection("courses")
     mycol.create_index("name", unique=True)
 else:
     mycol_courses = mydb["courses"]
@@ -62,49 +67,47 @@ class Course(Resource):
 
     def post(self, name):       #posts new course
         try:
-            teacher__caller=0
-            for elem in inspect.stack():
-                if "Teachers" in elem: 
-                    teacher_caller=1
-                    break
-
-            if teacher__caller==0:
+            if type(name) is str:
                 request_data = request.get_json()
+                teacher_caller=0
             else:
                 request_data=name
-
-
+                teacher_caller=1
+            
             new_course = {
                 "name": request_data["name"],
                 "price": request_data["price"],
             }
+            
             if "description" in request_data.keys():
                 new_course.update({"description": helpers.set_description(request_data["description"])})
             if "quantity" in request_data.keys():
                 new_course.update({"quantity": helpers.set_quantity(request_data["quantity"])})
             mycol_courses.insert_one(new_course)
-
-            
-            if teacher__caller==0:
+           
+           
+            if teacher_caller==0:
                 return dumps(new_course), 201
 
             else:
-                mycol_courses.update_one({"name":request_data["name"]},{"$set": {"teacher": request_data["id_teacher"]})
-                return mycol_courses.find({"name":request_data["name"]})['_id']
-            
+                
+                myquery = {"name":request_data["name"]}
+                newvalues = {"$set":{"teacher": request_data["id_teacher"]}}
+                mycol_courses.update_one(myquery ,newvalues)
+
+                return  list((list(mycol_courses.find({"name": request_data["name"]}, {"_id":1 }))[0]).values())[0]   
 
             
         except Exception as e:
             return {"error": str(e)}, 400
 
-#delete by id for teachers put method
-    def delete_by_id(self, _id):
+    def delete_by_id(self, ObjectId):
         try:
-            course = mycol.find_one_and_delete({"_id": _id})
+            course = mycol_courses.find_one_and_delete({"_id": ObjectId})
             if course:
                 return {"message": "Course deleted."}, 200
             else:
-                return {"message": "Course with this name not found."}, 404
+                return {"message": "Course with this id not found."}, 404
         except Exception as e:
             return {"error": str(e)}, 400
 
