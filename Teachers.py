@@ -57,6 +57,7 @@ else:
     mycol_teachers = mydb["teachers"]
 
 def add_course(request_data):
+    
     id_course=[]
     
     id_teacher=list((list(mycol_teachers.find({"username": request_data["username"]}, {"_id":1 }))[0]).values())[0]
@@ -72,6 +73,12 @@ def add_course(request_data):
     myquery = {"username": request_data["username"]}
     newvalues = {"$set": {"course": id_course}}          
     mycol_teachers.update_one(myquery, newvalues)
+
+def make_str_dict(request_data):
+    course=[]
+    for elem in request_data:
+        course.append(eval(elem))    
+    return course   
 
 class Teacher(Resource):
     def get(self, username):
@@ -103,9 +110,16 @@ class Teacher(Resource):
 
     def delete(self, username):
         try:
+            teacher_course= mycol_teachers.find_one({"username": username})
+            if "course" in teacher_course.keys():
+                for course_id in teacher_course["course"]:
+                    call=Courses.Course()
+                    call.delete_by_id(course_id)
+                
+            
             teacher= mycol_teachers.find_one_and_delete({"username": username})
             if teacher:
-                return {"message": "Teacher deleted."}, 200
+                return {"message": "Teacher (and his courses) deleted."}, 200
             else:
                 return {"message": "Teacher with this name not found."}, 404
         except Exception as e:
@@ -113,34 +127,48 @@ class Teacher(Resource):
 
     def put(self, username):
         try:
-            request_data = request.get_json()
-            
             teacher = list(mycol_teachers.find({"username": username}))
+            parser = reqparse.RequestParser()
+            is_required = False
+            if not teacher: 
+                is_required = True
+            else:
+                teacher = teacher[0]
+             
+            parser.add_argument("username", type=str, required=is_required)
+            parser.add_argument("password", type=str, required=is_required)
+            parser.add_argument("email", type=str, required=is_required)
+            parser.add_argument("role", type=int, required=is_required)
+            parser.add_argument("course", action='append', required= False)
+                
+            request_data = parser.parse_args()    
             
-            name = username    #because line 86
             updated_teacher = {
             "username":request_data["username"] if request_data["username"] else teacher["username"] ,
             "password":funct.encoding(request_data["password"])if request_data["password"] else teacher["password"] ,
             "email":request_data["email"] if request_data["email"] else teacher["email"] ,
-            "role":request_data["role"] if request_data["role"] else teacher["role"]
+            "role":request_data["role"] if request_data["role"]!=None else teacher["role"]   
             }
            
             if not teacher:
                 mycol_teachers.insert_one(updated_teacher)
-                if "course" in request_data.keys():
+                if request_data["course"]:
                     add_course(request_data)
                 return dumps(updated_teacher), 201
             else:
                 
-                mycol_teachers.update_one({"username": name}, {"$set": updated_teacher})  #searching by old username for old courses
-                if "course" in request_data.keys():
-                    if "course" in teacher[0].keys():
-                        for course_id in teacher["course"]:
-                            
+                mycol_teachers.update_one({"username": username}, {"$set": updated_teacher}) 
+                
+                if request_data["course"]:
+                    if "course" in teacher.keys():  
+                        for course_id in teacher["course"]: 
                             call=Courses.Course()
                             call.delete_by_id(course_id)
-                            
-                    add_course(request_data)                
+
+                    course=make_str_dict(request_data["course"])
+                    teacher.update({"course":course})        
+                    add_course(teacher)  
+                              
                 return dumps(updated_teacher), 201
         except Exception as e:
             return {"error": str(e)}, 400
