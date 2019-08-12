@@ -38,8 +38,8 @@ req = {
             "quantity": {
                "bsonType": "int",
                "description": "must be a number and is not required",
-               "minLength": 0,
-               "maxLength": 50
+               "minimum": 0,
+               "maximum": 50
             },
             "image":{
                 "bsonType": "string",
@@ -161,7 +161,7 @@ class Course(Resource):
                         new_image = request_data.get("image")
                     else:
                         new_image = course.get("image")
-                    if request_data.get("quantity"):
+                    if request_data.get("quantity") in list(range(0,51)):
                         new_quantity = request_data.get("quantity")
                     else:
                         new_quantity = course.get("quantity")
@@ -274,7 +274,7 @@ class CourseID(Resource):       #returns course for specified id
                         new_image = request_data.get("image")
                     else:
                         new_image = course.get("image")
-                    if request_data.get("quantity"):
+                    if request_data.get("quantity") in (list(range(0,51))):
                         new_quantity = request_data.get("quantity")
                     else:
                         new_quantity = course.get("quantity")
