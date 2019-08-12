@@ -80,22 +80,22 @@ class Teacher(Resource):
                 new_teacher.update({"course": request_data["course"]})
             mycol_teachers.insert_one(new_teacher)
             security.users.append(security.User((len(security.users) + 1), new_teacher["username"], new_teacher["password"]))
-            
             return dumps(new_teacher), 201
         except Exception as e:
             return {"error": str(e)}, 400
 
     def delete(self, username):
         try:
-            courses = (mycol_teachers.find_one({"username": username}))
-            courses_to_delete = courses.get("course")
-            for i in courses_to_delete:
-                mycol_courses.find_one_and_delete({"_id": i})
-            teacher = mycol_teachers.find_one_and_delete({"username": username})
-            if teacher:
-                return {"message": "Teacher deleted."}, 200
-            else:
+            teacher = mycol_teachers.find_one({"username": username})
+            if not teacher:
                 return {"message": "Teacher with this name not found."}, 404
+            else:
+                courses = (mycol_teachers.find_one({"username": username}))
+                courses_to_delete = courses.get("course")
+                for i in courses_to_delete:
+                    mycol_courses.find_one_and_delete({"_id": i})
+                mycol_teachers.find_one_and_delete({"username": username})
+                return {"message": "Teacher deleted."}, 200
         except Exception as e:
             return {"error": str(e)}, 400
 
