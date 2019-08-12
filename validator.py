@@ -1,7 +1,8 @@
 import pymongo
 from helpers import set_name, set_description, set_price, set_quantity
 def pswd_check(pswd):
-    if 5>=len(pswd)>=25:
+    if 5<=len(pswd)<=25:
+        print("1212")
         num, low, upp = 0, 0, 0
         for i in pswd:
             if i.isalpha(): num = 1
@@ -24,7 +25,10 @@ def eml_check(email):
 def valid(data):
     try:
         if "username" in data.keys() and "password" in data.keys() and "email" in data.keys() and "role" in data.keys():
-            if type(data["username"]) == str and type(data["password"]) == str and type(data["email"]) == str and type(data["role"]) ==  int and 3<=len(data["username"])<=20 and pswd_check(data["password"]) and eml_check(data["email"]) and (data["role"] == 0 or data["role"] == 1):
+            print("a1")
+            print(pswd_check(data["password"]))
+            if type(data["username"]) == str and type(data["password"]) == str and type(data["email"]) == str and type(data["role"]) == int and 3<=len(data["username"])<=20 and pswd_check(data["password"]) and eml_check(data["email"]) and (data["role"] == 0 or data["role"] == 1):
+                print("a2")
                 if "course" in data.keys():
                     for elem in data["course"]:
                         print(elem)
