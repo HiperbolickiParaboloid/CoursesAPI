@@ -18,12 +18,6 @@ else:
 
 mycol_teachers.create_index("username", unique=True)
 
-def eml_check(email):
-    if 5<=len(email)<=35 :
-        for element in mycol_teachers.find({},{"_id": 0 , "email": 1 }):
-            if element == email:
-                return False
-    return True
 
 class Teacher(Resource):
     def get(self, username):

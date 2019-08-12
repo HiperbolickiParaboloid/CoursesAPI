@@ -1,4 +1,4 @@
-from Teachers import eml_check
+import pymongo
 from helpers import set_name, set_description, set_price, set_quantity
 def pswd_check(pswd):
     if 5>=len(pswd)>=25:
@@ -9,6 +9,16 @@ def pswd_check(pswd):
             if i.isupper(): upp = 1
             if num and low and upp: return True
     return False
+def eml_check(email):
+    myclient = pymongo.MongoClient("mongodb://localhost:27017/")
+    mydb = myclient["CoursesAPI"]
+    if "teachers" in mydb.list_collection_names():
+        mycol_teachers = mydb["teachers"]
+        if 5<=len(email)<=35 :
+            for element in mycol_teachers.find({},{"_id": 0 , "email": 1 }):
+                if element == email:
+                    return False
+    return True
             
 
 def valid(data):
