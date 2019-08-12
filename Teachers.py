@@ -4,7 +4,9 @@ from bson.json_util import dumps
 from bson.objectid import ObjectId
 from validator import valid
 from helpers import line 
+import Courses
 import pymongo
+
 
 myclient = pymongo.MongoClient("mongodb://localhost:27017/")
 #$PUSH------------------------------PUT
@@ -17,6 +19,19 @@ else:
     mycol_teachers = mydb["teachers"]
 
 mycol_teachers.create_index("username", unique=True)
+
+def add_course(request_data):
+    
+    id_course=[]
+    
+    id_teacher=list((list(mycol_teachers.find({"username": request_data["username"]}, {"_id":1 }))[0]).values())[0]
+    call=Courses.Course()
+   
+    for elem in request_data["course"]:
+        
+        elem.update({"id_teacher":id_teacher})
+        
+        id_course.append(call.post(elem))
 
 
 class Teacher(Resource):
