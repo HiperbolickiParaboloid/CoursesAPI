@@ -79,7 +79,7 @@ class Teacher(Resource):
             if "course" in request_data.keys():
                 new_teacher.update({"course": request_data["course"]})
             mycol_teachers.insert_one(new_teacher)
-            security.users.append(security.User((len(security.users) + 1), new_teacher["username"], new_teacher["password"]))
+            #security.users.append(security.User((len(security.users) + 1), new_teacher["username"], new_teacher["password"]))
             return dumps(new_teacher), 201
         except Exception as e:
             return {"error": str(e)}, 400
