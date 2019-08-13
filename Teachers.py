@@ -19,10 +19,10 @@ else:
 mycol_courses = mydb["courses"]
 mycol_teachers.create_index("username", unique=True)
 
-def add_course(request_data, username):
+def add_course(request_data):
     mistake_list = []
     courses_id=[]
-    teachers_id = list(mycol_teachers.find({"username": username}, {"_id":1}))[0]["_id"]
+    teachers_id = list(mycol_teachers.find({"username": requsted_data["username"]}, {"_id":1}))[0]["_id"]
     #teachers_id=list((list(mycol_teachers.find({"username": request_data["username"]}, {"_id":1 }))[0]).values())[0]
     call=Courses.Course()
    
@@ -71,7 +71,7 @@ class Teacher(Resource):
                     }
                     mycol_teachers.insert_one(new_teacher)
                     if "course" in request_data.keys():
-                        (courses_id, mistake_list) = add_course(request_data, request_data["username"])
+                        (courses_id, mistake_list) = add_course(request_data)
                         mycol_teachers.update_one({ "username": request_data["username"] }, { "$set": {"courses_id" : courses_id }})   
                         if mistake_list:
                             mistake = "Teacher is posted but folowing courses already exist!  "  + str(mistake_list)
@@ -149,7 +149,7 @@ class Teacher(Resource):
                         course=make_str_dict(request_data["course"])
                         updated_teacher.update({"course":course})
         
-                        (courses_id, mistake_list) = add_course(updated_teacher, updated_teacher["username"])
+                        (courses_id, mistake_list) = add_course(updated_teacher)
                         mycol_teachers.update_one({ "username": request_data["username"] }, { "$set": {"courses_id" : courses_id }})   
                         if mistake_list:
                             mistake = "Teacher is posted but folowing courses already exist!  "  + str(mistake_list)
@@ -177,7 +177,7 @@ class Teacher(Resource):
                             course=make_str_dict(request_data["course"])
                             updated_teacher.update({"course":course})
                             if append_to_course:
-                                (courses_id, mistake_list) = add_course(updated_teacher, updated_teacher["username"])
+                                (courses_id, mistake_list) = add_course(updated_teacher)
                                 mycol_teachers.update_one({ "username": updated_teacher["username"] }, { "$set": {"courses_id" : courses_id }})   
                                 if mistake_list:
                                     mistake = "Teacher is posted but folowing courses already exist!  "  + str(mistake_list)
@@ -185,7 +185,7 @@ class Teacher(Resource):
                                 else:
                                     return dumps(updated_teacher), 201
                             else:
-                                (courses_id, mistake_list) = add_course(updated_teacher, updated_teacher["username"])
+                                (courses_id, mistake_list) = add_course(updated_teacher)
                                 mycol_teachers.update_one({ "username": updated_teacher["username"] }, { "$push": { "courses_id": { "$each": courses_id } } })   
                                 if mistake_list:
                                     mistake = "Teacher is posted but folowing courses already exist!  "  + str(mistake_list)
