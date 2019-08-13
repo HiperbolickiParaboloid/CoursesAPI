@@ -22,7 +22,7 @@ mycol_teachers.create_index("username", unique=True)
 def add_course(request_data):
     mistake_list = []
     courses_id=[]
-    teachers_id = list(mycol_teachers.find({"username": requsted_data["username"]}, {"_id":1}))[0]["_id"]
+    teachers_id = list(mycol_teachers.find({"username": request_data["username"]}, {"_id":1}))[0]["_id"]
     #teachers_id=list((list(mycol_teachers.find({"username": request_data["username"]}, {"_id":1 }))[0]).values())[0]
     call=Courses.Course()
    
