@@ -13,22 +13,21 @@ def eml_check(email):
     myclient = pymongo.MongoClient("mongodb://localhost:27017/")
     mydb = myclient["CoursesAPI"]
     if "teachers" in mydb.list_collection_names():
-        mycol_teachers = mydb["teachers"]
-        if 5<=len(email)<=35 :
-            for element in mycol_teachers.find({},{"_id": 0 , "email": 1 }):
-                if element == email:
-                    return False
-    return True
+        if type(email) != list:
+            mycol_teachers = mydb["teachers"]
+            if 5<=len(email)<=35 :
+                for element in list(mycol_teachers.find({},{"_id": 0 , "email": 1 })):
+                    if element["email"] == email:
+                        return False
+        return True
             
 
 def valid(data):
     try:
         if "username" in data.keys() and "password" in data.keys() and "email" in data.keys() and "role" in data.keys():
-            print(pswd_check(data["password"]))
             if type(data["username"]) == str and type(data["password"]) == str and type(data["email"]) == str and type(data["role"]) == int and 3<=len(data["username"])<=20 and pswd_check(data["password"]) and eml_check(data["email"]) and (data["role"] == 0 or data["role"] == 1):
                 if "course" in data.keys():
                     for elem in data["course"]:
-                        print(elem)
                         if "name" in elem.keys() and "price" in elem.keys() :
                             if set_name(elem["name"]) and set_price(elem["price"]):
                                 if "description" in elem.keys():
