@@ -14,8 +14,25 @@ mydb = myclient["CoursesAPI"]
 
 if not "teachers" in mydb.list_collection_names():
     mycol_teachers = mydb.create_collection("teachers")
+    new_teacher = {
+                        "username": "fiki",
+                        "password": funct.encoding("fikiFIK1"),
+                        "email"   : "emailemail",
+                        "role"    : 1
+                    }
+    mycol_teachers.insert_one(new_teacher)
+
 else:
     mycol_teachers = mydb["teachers"]
+if not list(mycol_teachers.find({},{"_id": 0 , "email": 1 })):
+    new_teacher = {
+                        "username": "fiki",
+                        "password": funct.encoding("fikiFIK1"),
+                        "email"   : "emailemail",
+                        "role"    : 1
+                    }
+    mycol_teachers.insert_one(new_teacher)
+
 mycol_courses = mydb["courses"]
 mycol_teachers.create_index("username", unique=True)
 
@@ -79,6 +96,8 @@ class Teacher(Resource):
                         else:
                             return dumps(new_teacher), 201
                     return dumps(new_teacher), 201
+                else:
+                    return dumps("Document failed validation!")
 
             else:
                 return {"error": "You are not authorized to create a new teacher. You must have an admin status."}, 401
@@ -133,17 +152,17 @@ class Teacher(Resource):
                 parser.add_argument("delete_course", type=str, required= False)
                 
                 request_data = parser.parse_args()    
-            
                 updated_teacher = {
                 "username":request_data["username"] if request_data["username"] else teacher["username"] ,
-                "password":request_data["password"] if request_data["password"] else teacher["password"] ,
+                "password":request_data["password"] if request_data["password"] else [teacher["password"]] ,
                 "email":request_data["email"] if request_data["email"] else [teacher["email"]] ,
                 "role":request_data["role"] if request_data["role"]!=None else teacher["role"]   
                 }
-
+                print(updated_teacher)
                 if valid(updated_teacher):
-                    updated_teacher["password"] = funct.encoding(request_data["password"])
-                     
+                    if type(updated_teacher["password"]) != list:
+                        updated_teacher["password"] = funct.encoding(request_data["password"])
+                    
                     if not teacher:
                         mycol_teachers.insert_one(updated_teacher)
                         course=make_str_dict(request_data["course"])
@@ -155,11 +174,14 @@ class Teacher(Resource):
                             mistake = "Teacher is posted but folowing courses already exist!  "  + str(mistake_list)
                             return mistake, 406
                         else:
-                            return dumps(updated_teacher    ), 201
+                            return dumps(updated_teacher), 201
 
                     else:
                         if type(updated_teacher["email"]) == list:
                             updated_teacher["email"] = teacher["email"]
+                        elif type(updated_teacher["password"]) == list:
+                            updated_teacher["password"] = teacher["password"]
+
                         mycol_teachers.update_one({"username": username}, {"$set": updated_teacher}) 
                         
                         if request_data["course"]:
@@ -191,7 +213,11 @@ class Teacher(Resource):
                                     mistake = "Teacher is posted but folowing courses already exist!  "  + str(mistake_list)
                                     return mistake, 406
                                 else:
-                                    return dumps(updated_teacher), 201    
+                                    return dumps(updated_teacher), 201  
+                        else:
+                            return dumps(updated_teacher), 201 
+                else:
+                    return dumps("Document failed validation!")  
             else:
                 return {"error": "You are not authorized to edit a teacher. You must have an admin status."}, 401
         except Exception as e:
