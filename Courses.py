@@ -85,20 +85,18 @@ class Course(Resource):
     @jwt_required()
     def post(self, name):       #posts new course
         try:
-            
-            if type(name) is str:
+            if type(name) == str:
                 current_teacher = mycol_teachers.find_one({"username": current_identity.username})
-                teacher_id = current_teacher.get("_id")
+                teachers_id = current_teacher.get("_id")
                 request_data = request.get_json()
             else:
-                request_data=name
+                request_data = name
             
             new_course = {
                 "name": request_data["name"],
                 "price": request_data["price"],
                 "image": "/images/default.jpg",
-                "quantity": 0,
-                "teacher": teacher_id
+                "quantity": 0
             }
             if "description" in request_data.keys():
                 new_course.update({"description": request_data["description"]})
@@ -106,13 +104,18 @@ class Course(Resource):
                 new_course.update({"image": request_data["image"]})
             if "quantity" in request_data.keys():
                 new_course.update({"quantity": request_data["quantity"]})
-            if type(name) is str:
+            if  "teachers_id" not in request_data.keys():
+                new_course.update({"teachers_id": teachers_id})
+
+            if type(name) == str:
                 mycol_courses.insert_one(new_course)
                 current_course = mycol_courses.find_one({"name": request_data["name"]})
                 course_id = current_course.get("_id")
-                updated_course_list = current_teacher.get("course")
+                updated_course_list = current_teacher.get("courses_id")
+                if not updated_course_list:
+                    updated_course_list = []
                 updated_course_list.append(course_id)
-                mycol_teachers.update_one({"_id": teacher_id}, {"$set": {"course": updated_course_list}})
+                mycol_teachers.update_one({"_id": teachers_id}, {"$set": {"courses_id": updated_course_list}})
                 return dumps(new_course), 201   
             else:
                 mycol_courses.create_index("name", unique=True)
@@ -128,7 +131,7 @@ class Course(Resource):
     def put(self, name):
         try:
             current_teacher = mycol_teachers.find_one({"username": current_identity.username})
-            teacher_id = current_teacher.get("_id")
+            teachers_id = current_teacher.get("_id")
             request_data = request.get_json()
             course = mycol_courses.find_one({"name": name})
             if not course:
@@ -138,7 +141,7 @@ class Course(Resource):
                 "description": "No description.",
                 "image": "/images/default.jpg",
                 "quantity": 0,
-                "teacher": teacher_id
+                "teachers_id": teachers_id
                 }
                 if "description" in request_data.keys():
                     new_course.update({"description": request_data["description"]})
@@ -149,13 +152,15 @@ class Course(Resource):
                 mycol_courses.insert_one(new_course)
                 current_course = mycol_courses.find_one({"name": request_data["name"]})
                 course_id = current_course.get("_id")
-                updated_course_list = current_teacher.get("course")
+                updated_course_list = current_teacher.get("courses_id")
+                if not updated_course_list:
+                    updated_course_list = []
                 updated_course_list.append(course_id)
-                mycol_teachers.update_one({"_id": teacher_id}, {"$set": {"course": updated_course_list}})
+                mycol_teachers.update_one({"_id": teachers_id}, {"$set": {"courses_id": updated_course_list}})
                 return dumps(new_course), 201
             else:
                 course_id = course.get("teacher")
-                if teacher_id != course_id:
+                if teachers_id != course_id:
                     return {"message": "You can edit only your courses. Please verify your credentials, or course name."}, 404
                 else:
                     if request_data.get("name"):
@@ -184,7 +189,7 @@ class Course(Resource):
                         "description": new_description,
                         "image": new_image,
                         "quantity": new_quantity,
-                        "teacher": teacher_id
+                        "teacher": teachers_id
                         }
                     mycol_courses.update_one({"name": name}, {"$set": new_course})
                     return {"message": "Updated"}, 200
@@ -204,12 +209,12 @@ class Course(Resource):
                 if teacher_id_ver != course_id_ver:
                     return {"message": "You can edit only your courses. Please verify your credentials, or course name."}, 404
                 else:
-                    teacher_id =  course.get("teacher")
-                    teacher = mycol_teachers.find_one({"_id": teacher_id})
+                    teachers_id =  course.get("teacher")
+                    teacher = mycol_teachers.find_one({"_id": teachers_id})
                     courses_list = teacher.get("course")
                     course_id = course.get("_id")
                     courses_list.remove(course_id)
-                    mycol_teachers.find_one_and_update({"_id": teacher_id}, {"$set": {"course": courses_list}})
+                    mycol_teachers.find_one_and_update({"_id": teachers_id}, {"$set": {"courses_id": courses_list}})
                     mycol_courses.find_one_and_delete({"name": name})
                     return {"message": "Course has been deleted."}, 200                    
         except Exception as e:
@@ -249,9 +254,9 @@ class CourseID(Resource):       #returns course for specified id
                     return {"message": "Course with this ID not found."}, 404
                 else:
                     current_teacher = mycol_teachers.find_one({"username": current_identity.username})
-                    teacher_id = current_teacher.get("_id")
+                    teachers_id = current_teacher.get("_id")
                     course_id = course.get("teacher")
-                    if teacher_id != course_id:
+                    if teachers_id != course_id:
                         return {"message": "You can edit only your courses. Please verify your credentials, or course ID."}, 404
                     else:
                         mycol_courses.find_one_and_delete({"_id": ObjectId(_id)})
@@ -263,12 +268,12 @@ class CourseID(Resource):       #returns course for specified id
     def put(self, _id):
         try:
             current_teacher = mycol_teachers.find_one({"username": current_identity.username})
-            teacher_id = current_teacher.get("_id")
+            teachers_id = current_teacher.get("_id")
             course = mycol_courses.find_one({"_id": ObjectId(_id)})
             course_id = course.get("teacher")
             request_data = request.get_json()
             if course:
-                if teacher_id != course_id:
+                if teachers_id != course_id:
                     return {"message": "You can edit only your courses. Please verify your credentials, or course ID."}, 404
                 else:
                     if request_data.get("name"):
@@ -297,7 +302,7 @@ class CourseID(Resource):       #returns course for specified id
                         "description": new_description,
                         "image": new_image,
                         "quantity": new_quantity,
-                        "teacher": teacher_id
+                        "teachers_id": teachers_id
                         }
                     mycol_courses.update_one({"_id": ObjectId(_id)}, {"$set": new_course})
                     return {"message": "Selected course has been updated."}, 200
@@ -344,9 +349,9 @@ class CourseINC(Resource):      #increses field "quantity" by one, for specified
                 return {"message": "Course with this ID not found."}, 404
             else:
                 current_teacher = mycol_teachers.find_one({"username": current_identity.username})
-                teacher_id = current_teacher.get("_id")
+                teachers_id = current_teacher.get("_id")
                 course_id = course.get("teacher")
-                if teacher_id != course_id:
+                if teachers_id != course_id:
                     return {"message": "You can edit only your courses. Please verify your credentials, or course ID."}, 404
                 else:
                     mycol_courses.update_one({"_id": ObjectId(_id)}, {"$set": {"quantity": (course["quantity"]+1)}})
@@ -364,9 +369,9 @@ class CourseDEC(Resource):      #decreses field "quantity" by one, for specified
                 return {"message": "Course with this ID not found."}, 404
             else:
                 current_teacher = mycol_teachers.find_one({"username": current_identity.username})
-                teacher_id = current_teacher.get("_id")
+                teachers_id = current_teacher.get("_id")
                 course_id = course.get("teacher")
-                if teacher_id != course_id:
+                if teachers_id != course_id:
                     return {"message": "You can edit only your courses. Please verify your credentials, or course ID."}, 404
                 else:
                     mycol_courses.update_one({"_id": ObjectId(_id)}, {"$set": {"quantity": (course["quantity"]-1)}})

@@ -158,7 +158,6 @@ class Teacher(Resource):
                 "email":request_data["email"] if request_data["email"] else [teacher["email"]] ,
                 "role":request_data["role"] if request_data["role"]!=None else teacher["role"]   
                 }
-                print(updated_teacher)
                 if valid(updated_teacher):
                     if type(updated_teacher["password"]) != list:
                         updated_teacher["password"] = funct.encoding(request_data["password"])
@@ -170,7 +169,7 @@ class Teacher(Resource):
         
                         (courses_id, mistake_list) = add_course(updated_teacher)
                         mycol_teachers.update_one({ "username": request_data["username"] }, { "$set": {"courses_id" : courses_id }})   
-                        if mistake_list:
+                        if len(mistake_list) == 0:
                             mistake = "Teacher is posted but folowing courses already exist!  "  + str(mistake_list)
                             return mistake, 406
                         else:
@@ -178,9 +177,9 @@ class Teacher(Resource):
 
                     else:
                         if type(updated_teacher["email"]) == list:
-                            updated_teacher["email"] = teacher["email"]
-                        elif type(updated_teacher["password"]) == list:
-                            updated_teacher["password"] = teacher["password"]
+                            updated_teacher["email"] = updated_teacher["email"][0]
+                        if type(updated_teacher["password"]) == list:
+                            updated_teacher["password"] = updated_teacher["password"][0]
 
                         mycol_teachers.update_one({"username": username}, {"$set": updated_teacher}) 
                         
@@ -259,29 +258,36 @@ class TeacherSalary(Resource):
 
 class TeacherCourse(Resource):
 
-    def get(self, username, id):
+    def get(self):
+    
         try:
-            teacher = list(mycol_teachers.find_one({"username": username}))
+            username = request.args.get('username')
+            id = ObjectId(request.args.get('id'))
+            print(username)
+            teacher = list(mycol_teachers.find({"username": username}))
             if teacher:
                 teacher = teacher[0]
-                course = list(mycol_courses.find({"name": id}))
+                course = list(mycol_courses.find({"_id": id}))
                 if course:
-                    course = course[0]
-                    teacher["course"] = course
+                    course = course[0]["_id"]
+                    teacher["courses_id"] = course
                     return dumps(teacher), 200
                 else:
-                    teacher.pop("course", None)
-                    teacher.pop("password", None)
+                    teacher.pop("course")
+                    teacher.pop("password")
                     message = str(teacher) + "Teacher exists but course does not!"
                     return dumps(message), 406
             else:
                 return {"message": "Teacher not found."}, 404
+            
         except Exception as e:
             return dumps({"error": str(e)})
 
 
-    def post(self, username, id):
+    def post(self):
             try:
+                username = request.args.get('username')
+                id = ObjectId(request.args.get('id'))
                 current_teacher = mycol_teachers.find_one({"username": current_identity.username})
                 if current_identity.username == "admin" or current_teacher.get("role") == 1:
                     teacher = list(mycol_teachers.find_one({"username": username}))
@@ -312,8 +318,10 @@ class TeacherCourse(Resource):
                 return dumps({"error": str(e)})
 
 
-    def put(self, username, id):
+    def put(self):
         try:
+            username = request.args.get('username')
+            id = ObjectId(request.args.get('id'))
             current_teacher = mycol_teachers.find_one({"username": current_identity.username})
             if current_identity.username == "admin" or current_teacher.get("role") == 1:
                 teacher = list(mycol_teachers.find_one({"username": username}))
@@ -346,10 +354,15 @@ class TeacherCourse(Resource):
         except Exception as e:
             return dumps({"error": str(e)})
 
-    def delete(self, username, id):
+    def delete(self):
         try:
+            username = request.args.get('username')
+            id = ObjectId(request.args.get('id'))
+            print(username)
             current_teacher = mycol_teachers.find_one({"username": current_identity.username})
+            print("1111")
             if current_identity.username == "admin" or current_teacher.get("role") == 1:
+                print("aaaaaaaaaaaaa")
                 teacher = list(mycol_teachers.find_one({"username": username}))
                 course_id = list(mycol_courses.find_one({"_id": id}))
                 if teacher and course_id:

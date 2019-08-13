@@ -20,6 +20,6 @@ api.add_resource(Courses.Image, "/images")
 api.add_resource(Teachers.Teacher, "/teacher/<string:username>")
 api.add_resource(Teachers.TeachersList, "/teachers")
 api.add_resource(Teachers.TeacherSalary, "/salary/<string:username>")
-api.add_resource(Teachers.TeacherCourse, "/teacher")
+api.add_resource(Teachers.TeacherCourse, "/teachere") 
 
 app.run(port=5000, debug=True)
