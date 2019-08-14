@@ -106,11 +106,12 @@ class Course(Resource):
                 new_course.update({"image": request_data["image"]})
             if "quantity" in request_data.keys():
                 new_course.update({"quantity": request_data["quantity"]})
-            if  "teachers_id" not in request_data.keys():
-                new_course.update({"teachers_id": teachers_id})
+            if  "teacher" not in request_data.keys():
+                new_course.update({"teacher": teachers_id})
 
             if type(name) == str:
                 mycol_courses.insert_one(new_course)
+                email_helper.email_body(new_course)
                 current_course = mycol_courses.find_one({"name": request_data["name"]})
                 course_id = current_course.get("_id")
                 updated_course_list = current_teacher.get("courses_id")
@@ -118,8 +119,6 @@ class Course(Resource):
                     updated_course_list = []
                 updated_course_list.append(course_id)
                 mycol_teachers.update_one({"_id": teachers_id}, {"$set": {"courses_id": updated_course_list}})
-                email_helper.email_body(new_course)
-                print("Adding course to csv")
                 return dumps(new_course), 201   
             else:
                 mycol_courses.create_index("name", unique=True)

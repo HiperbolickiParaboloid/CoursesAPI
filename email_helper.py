@@ -21,7 +21,7 @@ def email_body(course):
                         "description":course["description"],
                         "quantity":course["quantity"] ,
                         "image":course["image"] , 
-                        "teacher":course["teachers_id"]
+                        "teacher":course["teacher"]
                         })
                
                     
