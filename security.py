@@ -1,6 +1,6 @@
 from werkzeug.security import safe_str_cmp
 from Teachers import mycol_teachers
-
+from hashlib import sha256
 
 class User():
     def __init__(self, _id, username, password):
@@ -26,10 +26,12 @@ userid_mapping = {u.id: u for u in users}
 
 def authenticate(username, password):
     user = username_mapping.get(username, None)
-    if user and safe_str_cmp(user.password.encode("utf-8"), password.encode("utf-8")): # sigurniji nacin za provjeru stringovacd
+    print(user)
+    if user and safe_str_cmp(user.password, str(sha256(password.encode("utf-8")).hexdigest())): # sigurniji nacin za provjeru stringovacd
         return user
 
 def identity(payload):
     user_id = payload["identity"]
+    print("user_id")
     return userid_mapping.get(user_id, None)
 
