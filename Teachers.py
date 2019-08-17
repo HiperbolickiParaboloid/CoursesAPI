@@ -31,7 +31,7 @@ else:
         for teacher in mycol_teachers.find():
             if teacher["role"]==1:
                 teachers_list.append(teacher["email"])
-        print(teachers_list)
+        
         email_helper.old_receivers(teachers_list)
 
 mycol_courses = mydb["courses"]
@@ -271,7 +271,6 @@ class TeacherCourse(Resource):
         try:
             username = request.args.get('username')
             id = ObjectId(request.args.get('id'))
-            print(username)
             teacher = list(mycol_teachers.find({"username": username}))
             if teacher:
                 teacher = teacher[0]
@@ -297,10 +296,8 @@ class TeacherCourse(Resource):
                 username = request.args.get('username')
                 id = ObjectId(request.args.get('id'))
                 current_teacher = mycol_teachers.find_one({"username": current_identity.username})
-                print("22222")
                 if current_identity.username == "admin" or current_teacher.get("role") == 1:
                     teacher = mycol_teachers.find_one({"username": username})
-                    print(teacher)
                     course_id = (mycol_courses.find_one({"_id": id}))
                     if teacher and course_id:
                         course_teacher = mycol_teachers.find({ "course": {"$elemMatch": {"$eq":id}}})
@@ -336,7 +333,6 @@ class TeacherCourse(Resource):
             current_teacher = mycol_teachers.find_one({"username": current_identity.username})
             if current_identity.username == "admin" or current_teacher.get("role") == 1:
                 teacher = mycol_teachers.find_one({"username": username})
-                print(teacher)
                 course_id = list(mycol_courses.find_one({"_id": id}))
                 if teacher and course_id:
                     course_teacher = mycol_teachers.find({ "course": {"$elemMatch": {"$eq":id}}})

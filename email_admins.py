@@ -12,7 +12,6 @@ def email_admin():
     for line in f:
             admins.append(line.strip("\n "))
     f.close()    
-    print(admins)
     emailfrom = "coursesapi19@gmail.com"
     emailto = ", ".join(admins)
     fileToSend = "courses.csv"
@@ -37,12 +36,9 @@ def email_admin():
     encoders.encode_base64(attachment)
     attachment.add_header("Content-Disposition", "attachment", filename=fileToSend)
     msg.attach(attachment)
-    print(emailto)
     with open('courses.csv',"r", newline='') as csvfile:
           rows=sum(1 for row in csvfile)  
-    print(rows)
-    if emailto and rows==2:   
-            print("saljemo")                     
+    if emailto and rows==2:                       
             server = smtplib.SMTP("smtp.gmail.com:587")
             server.starttls()
             server.login(username,password)

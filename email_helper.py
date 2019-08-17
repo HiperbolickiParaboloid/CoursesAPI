@@ -13,7 +13,6 @@ def email_body(course):
         with open('courses.csv',"w", newline='') as csvfile:
                 fieldnames = ["name", "price", "description", "quantity","image", "teacher"]
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                print(course["description"])
                 writer.writeheader()
                 writer.writerow({
                         "name":course["name"], 
