@@ -12,7 +12,7 @@ class User():
 
 
 br = 1
-users = [ User(1, "admin", "admin")
+users = [ User(1, "admin", str(sha256("admin".encode("utf-8")).hexdigest()))
 ]
 teachers = list(mycol_teachers.find())
 for i in teachers:

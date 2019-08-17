@@ -23,7 +23,12 @@ def email_body(course):
                         "image":course["image"] , 
                         "teacher":course["teacher"]
                         })
-               
+def old_receivers(teachers_list):
+    f = open("./receivers.txt", "a")
+    for teacher in teachers_list:
+        f.write(teacher+"\n")
+    f.close()
+
                     
 def receivers(admin):
     f = open("./receivers.txt", "a")

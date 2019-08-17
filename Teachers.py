@@ -3,6 +3,7 @@ from flask_restful import Resource, Api, reqparse
 from bson.json_util import dumps
 from bson.objectid import ObjectId
 import pymongo
+import os
 import funct, security
 import Courses
 import email_helper
@@ -12,27 +13,26 @@ myclient = pymongo.MongoClient("mongodb://localhost:27017/")
 mydb = myclient["CoursesAPI"]
 
 
-
 if not "teachers" in mydb.list_collection_names():
     mycol_teachers = mydb.create_collection("teachers")
     new_teacher = {
                         "username": "fiki",
                         "password": funct.encoding("fikiFIK1"),
-                        "email"   : "emailemail",
+                        "email"   : "filippilif18@gmail.com",
                         "role"    : 1
                     }
     mycol_teachers.insert_one(new_teacher)
 
 else:
+    
     mycol_teachers = mydb["teachers"]
-if not list(mycol_teachers.find({},{"_id": 0 , "email": 1 })):
-    new_teacher = {
-                        "username": "fiki",
-                        "password": funct.encoding("fikiFIK1"),
-                        "email"   : "emailemail",
-                        "role"    : 1
-                    }
-    mycol_teachers.insert_one(new_teacher)
+    if os.stat("receivers.txt").st_size == 0:
+        teachers_list=[]
+        for teacher in mycol_teachers.find():
+            if teacher["role"]==1:
+                teachers_list.append(teacher["email"])
+        print(teachers_list)
+        email_helper.old_receivers(teachers_list)
 
 mycol_courses = mydb["courses"]
 mycol_teachers.create_index("username", unique=True)
@@ -45,7 +45,7 @@ def add_course(request_data):
     call=Courses.Course()
    
     for elem in request_data["course"]:
-        elem.update({"teachers_id" : teachers_id})
+        elem.update({"teacher" : teachers_id})
         help = call.post(elem)
         mycol_teachers.create_index("username", unique=True)
         if type(help) != tuple:
@@ -92,7 +92,7 @@ class Teacher(Resource):
                         email_helper.receivers(new_teacher["email"])
                     if "course" in request_data.keys():
                         (courses_id, mistake_list) = add_course(request_data)
-                        mycol_teachers.update_one({ "username": request_data["username"] }, { "$set": {"courses_id" : courses_id }})   
+                        mycol_teachers.update_one({ "username": request_data["username"] }, { "$set": {"course" : courses_id }})   
                         if mistake_list:
                             mistake = "Teacher is posted but folowing courses already exist!  "  + str(mistake_list)
                             return mistake, 406
@@ -173,7 +173,7 @@ class Teacher(Resource):
                         updated_teacher.update({"course":course})
         
                         (courses_id, mistake_list) = add_course(updated_teacher)
-                        mycol_teachers.update_one({ "username": request_data["username"] }, { "$set": {"courses_id" : courses_id }})   
+                        mycol_teachers.update_one({ "username": request_data["username"] }, { "$set": {"course" : courses_id }})   
                         if len(mistake_list) == 0:
                             mistake = "Teacher is posted but folowing courses already exist!  "  + str(mistake_list)
                             return mistake, 406
@@ -193,7 +193,7 @@ class Teacher(Resource):
 
                         if request_data["course"]:
                             append_to_course = 0
-                            if "courses_id" in teacher.keys(): 
+                            if "course" in teacher.keys(): 
                                 if "delete_courses" in request_data.keys():
                                     if request_data["delete_courses"] == "y":
                                         for course_id in teacher["course"]: 
@@ -207,7 +207,7 @@ class Teacher(Resource):
                             updated_teacher.update({"course":course})
                             if append_to_course:
                                 (courses_id, mistake_list) = add_course(updated_teacher)
-                                mycol_teachers.update_one({ "username": updated_teacher["username"] }, { "$set": {"courses_id" : courses_id }})   
+                                mycol_teachers.update_one({ "username": updated_teacher["username"] }, { "$set": {"course" : courses_id }})   
                                 if mistake_list:
                                     mistake = "Teacher is posted but folowing courses already exist!  "  + str(mistake_list)
                                     return mistake, 406
@@ -215,7 +215,7 @@ class Teacher(Resource):
                                     return dumps(updated_teacher), 201
                             else:
                                 (courses_id, mistake_list) = add_course(updated_teacher)
-                                mycol_teachers.update_one({ "username": updated_teacher["username"] }, { "$push": { "courses_id": { "$each": courses_id } } })   
+                                mycol_teachers.update_one({ "username": updated_teacher["username"] }, { "$push": { "course": { "$each": courses_id } } })   
                                 if mistake_list:
                                     mistake = "Teacher is posted but folowing courses already exist!  "  + str(mistake_list)
                                     return mistake, 406
@@ -278,7 +278,7 @@ class TeacherCourse(Resource):
                 course = list(mycol_courses.find({"_id": id}))
                 if course:
                     course = course[0]["_id"]
-                    teacher["courses_id"] = course
+                    teacher["course"] = course
                     return dumps(teacher), 200
                 else:
                     teacher.pop("course")
@@ -297,18 +297,21 @@ class TeacherCourse(Resource):
                 username = request.args.get('username')
                 id = ObjectId(request.args.get('id'))
                 current_teacher = mycol_teachers.find_one({"username": current_identity.username})
+                print("22222")
                 if current_identity.username == "admin" or current_teacher.get("role") == 1:
-                    teacher = list(mycol_teachers.find_one({"username": username}))
-                    course_id = list(mycol_courses.find_one({"_id": id}))
+                    teacher = mycol_teachers.find_one({"username": username})
+                    print(teacher)
+                    course_id = (mycol_courses.find_one({"_id": id}))
                     if teacher and course_id:
-                        teacher = teacher[0]
-                        course_teacher = list(mycol_teachers.find({"_id" : 0, "courses_id": {"$elemMatch": id}}))
-                        if not course_teacher:
-                            if "courses_id" in teacher.keys():
-                                mycol_teachers.update_one({ "username": username }, { "$push": { "courses_id": id } }) 
+                        teacher = teacher
+                        course_teacher = (mycol_teachers.find({ "course": {"$elemMatch": id}}))
+                        print(dict(course_teacher))
+                        if not list(course_teacher):
+                            if "course" in teacher.keys():
+                                mycol_teachers.update_one({ "username": username }, { "$push": { "course": id } }) 
                                 return {"message": "Teacher updated!"}, 200  
                             else:
-                                mycol_teachers.update_one({ "username": username }, { "$set": { "courses_id": id } })
+                                mycol_teachers.update_one({ "username": username }, { "$set": { "course": id } })
                                 return {"message": "Teacher updated!"}, 200
                         else:
                             return {"error": "Course already has a teacher. You need to use put operation or delete it from current teacher first!"}, 400
@@ -333,20 +336,21 @@ class TeacherCourse(Resource):
             current_teacher = mycol_teachers.find_one({"username": current_identity.username})
             if current_identity.username == "admin" or current_teacher.get("role") == 1:
                 teacher = list(mycol_teachers.find_one({"username": username}))
+                print(teacher)
                 course_id = list(mycol_courses.find_one({"_id": id}))
                 if teacher and course_id:
                     teacher = teacher[0]
-                    course_teacher = list(mycol_teachers.find({"_id" : 0, "courses_id": {"$elemMatch": id}}))
+                    course_teacher = list(mycol_teachers.find({"_id" : 0, "course": {"$elemMatch": id}}))
                     if course_teacher:
-                        mycol_teachers.update({}, { "$pull": { "courses_id": id } })
+                        mycol_teachers.update({}, { "$pull": { "course": id } })
                         mycol_courses.replace_one({"_id": id}, {"teachers_id" : current_teacher.get("_id")})
 
                        
-                    if "courses_id" in teacher.keys():
-                        mycol_teachers.update_one({ "username": username }, { "$push": { "courses_id": id } }) 
+                    if "course" in teacher.keys():
+                        mycol_teachers.update_one({ "username": username }, { "$push": { "course": id } }) 
                         return {"message": "Teacher updated!"}, 200  
                     else:
-                        mycol_teachers.update_one({ "username": username }, { "$set": { "courses_id": id } })
+                        mycol_teachers.update_one({ "username": username }, { "$set": { "course": id } })
                         return {"message": "Teacher updated!"}, 200
                         
                 else:
@@ -364,28 +368,19 @@ class TeacherCourse(Resource):
     @jwt_required()
     def delete(self):
         try:
-            print("1111")
             username = request.args.get('username')
             id = ObjectId(request.args.get('id'))
-            print(username)
-            print(current_identity)
             current_teacher = mycol_teachers.find_one({"username": current_identity.username})
-            print("1111")
             if current_identity.username == "admin" or current_teacher.get("role") == 1:
-                print("aaaaaaaaaaaaa")
                 teacher = list(mycol_teachers.find({"username": username}))
-                print(teacher)
                 course_id = list(mycol_courses.find_one({"_id": id}))
                 if teacher and course_id:
                     teacher = teacher[0]
-                    if "courses_id" in teacher.keys():
-                        if id in teacher["courses_id"]:
-                            print("2222222")
-                            mycol_teachers.update({"username": username}, { "$pull": { "courses_id": id } })
-                            print("4444")
-                            mycol_courses.update({"_id" : id}, {"$pull", {"teachers_id" : None }})
-                            print("wadawd")
-
+                    if "course" in teacher.keys():
+                        if id in teacher["course"]:
+                            mycol_teachers.update({"username": username}, { "$pull": { "course": id } })
+                            mycol_courses.update({"_id" : id}, {"$unset": {"teacher" : "" }})
+                            return dumps("Successfully updated!"), 200
                         else:
                             return {"error": "This teacher does not operate over wanted course!"}, 400
                     else:

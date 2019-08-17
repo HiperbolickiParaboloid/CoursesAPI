@@ -11,6 +11,7 @@ from werkzeug.utils import secure_filename
 from flask_jwt import JWT, jwt_required, current_identity
 
 
+
 myclient = pymongo.MongoClient("mongodb://localhost:27017/")
 mydb = myclient["CoursesAPI"]
 
@@ -112,18 +113,21 @@ class Course(Resource):
             if type(name) == str:
                 mycol_courses.insert_one(new_course)
                 email_helper.email_body(new_course)
+                email_admins.email_admin()
                 current_course = mycol_courses.find_one({"name": request_data["name"]})
                 course_id = current_course.get("_id")
-                updated_course_list = current_teacher.get("courses_id")
+                updated_course_list = current_teacher.get("course")
                 if not updated_course_list:
                     updated_course_list = []
                 updated_course_list.append(course_id)
-                mycol_teachers.update_one({"_id": teachers_id}, {"$set": {"courses_id": updated_course_list}})
+                mycol_teachers.update_one({"_id": teachers_id}, {"$set": {"course": updated_course_list}})
                 return dumps(new_course), 201   
             else:
                 mycol_courses.create_index("name", unique=True)
-                new_course.update({"teachers_id": request_data["teachers_id"]})
+                new_course.update({"teacher": request_data["teacher"]})
                 mycol_courses.insert_one(new_course)
+                email_helper.email_body(new_course)
+                email_admins.email_admin()
                 return  list(mycol_courses.find({"name": request_data["name"]}, {"_id":1}))[0]["_id"]
             
             
@@ -144,7 +148,7 @@ class Course(Resource):
                 "description": "No description.",
                 "image": "/images/default.jpg",
                 "quantity": 0,
-                "teachers_id": teachers_id
+                "teacher": teachers_id
                 }
                 if "description" in request_data.keys():
                     new_course.update({"description": request_data["description"]})
@@ -155,11 +159,11 @@ class Course(Resource):
                 mycol_courses.insert_one(new_course)
                 current_course = mycol_courses.find_one({"name": request_data["name"]})
                 course_id = current_course.get("_id")
-                updated_course_list = current_teacher.get("courses_id")
+                updated_course_list = current_teacher.get("course")
                 if not updated_course_list:
                     updated_course_list = []
                 updated_course_list.append(course_id)
-                mycol_teachers.update_one({"_id": teachers_id}, {"$set": {"courses_id": updated_course_list}})
+                mycol_teachers.update_one({"_id": teachers_id}, {"$set": {"course": updated_course_list}})
                 return dumps(new_course), 201
             else:
                 course_id = course.get("teacher")
@@ -217,7 +221,7 @@ class Course(Resource):
                     courses_list = teacher.get("course")
                     course_id = course.get("_id")
                     courses_list.remove(course_id)
-                    mycol_teachers.find_one_and_update({"_id": teachers_id}, {"$set": {"courses_id": courses_list}})
+                    mycol_teachers.find_one_and_update({"_id": teachers_id}, {"$set": {"course": courses_list}})
                     mycol_courses.find_one_and_delete({"name": name})
                     return {"message": "Course has been deleted."}, 200                    
         except Exception as e:
@@ -305,7 +309,7 @@ class CourseID(Resource):       #returns course for specified id
                         "description": new_description,
                         "image": new_image,
                         "quantity": new_quantity,
-                        "teachers_id": teachers_id
+                        "teacher": teachers_id
                         }
                     mycol_courses.update_one({"_id": ObjectId(_id)}, {"$set": new_course})
                     return {"message": "Selected course has been updated."}, 200
