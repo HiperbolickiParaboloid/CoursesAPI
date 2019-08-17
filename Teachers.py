@@ -303,12 +303,12 @@ class TeacherCourse(Resource):
                     print(teacher)
                     course_id = (mycol_courses.find_one({"_id": id}))
                     if teacher and course_id:
-                        teacher = teacher
-                        course_teacher = (mycol_teachers.find({ "course": {"$elemMatch": id}}))
-                        print(dict(course_teacher))
+                        course_teacher = mycol_teachers.find({ "course": {"$elemMatch": {"$eq":id}}})
                         if not list(course_teacher):
                             if "course" in teacher.keys():
                                 mycol_teachers.update_one({ "username": username }, { "$push": { "course": id } }) 
+                                mycol_courses.update_one({ "_id": id }, { "$set": { "teacher": teacher["_id"] } }) 
+
                                 return {"message": "Teacher updated!"}, 200  
                             else:
                                 mycol_teachers.update_one({ "username": username }, { "$set": { "course": id } })
@@ -335,15 +335,14 @@ class TeacherCourse(Resource):
             id = ObjectId(request.args.get('id'))
             current_teacher = mycol_teachers.find_one({"username": current_identity.username})
             if current_identity.username == "admin" or current_teacher.get("role") == 1:
-                teacher = list(mycol_teachers.find_one({"username": username}))
+                teacher = mycol_teachers.find_one({"username": username})
                 print(teacher)
                 course_id = list(mycol_courses.find_one({"_id": id}))
                 if teacher and course_id:
-                    teacher = teacher[0]
-                    course_teacher = list(mycol_teachers.find({"_id" : 0, "course": {"$elemMatch": id}}))
+                    course_teacher = mycol_teachers.find({ "course": {"$elemMatch": {"$eq":id}}})
                     if course_teacher:
-                        mycol_teachers.update({}, { "$pull": { "course": id } })
-                        mycol_courses.replace_one({"_id": id}, {"teachers_id" : current_teacher.get("_id")})
+                        mycol_teachers.find_one_and_update({}, { "$pull": { "course": id } })
+                        mycol_courses.update({"_id": id}, {"$set":{"teacher" : teacher["_id"]}})
 
                        
                     if "course" in teacher.keys():
