@@ -256,9 +256,7 @@ class CourseID(Resource):       #returns course for specified id
     @jwt_required()
     def delete(self, _id):
         try:
-            if type(_id) == str:
-                _id = ObjectId(_id)
-            course = mycol_courses.find_one({"_id": _id})
+            course = mycol_courses.find_one({"_id": ObjectId(_id)})
             if not course:
                 return {"message": "Course with this ID not found."}, 404
             else:
