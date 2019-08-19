@@ -14,23 +14,25 @@ class User():
 br = 1
 users = [ User(1, "admin", str(sha256("admin".encode("utf-8")).hexdigest()))
 ]
-teachers = list(mycol_teachers.find())
-for i in teachers:
-    user = User((len(users)+1), i.get("username",""), i.get("password",""))
-    users.append(user)
-for i in users:
-    print (i)
-
-username_mapping = {u.username: u for u in users}
-userid_mapping = {u.id: u for u in users}
 
 def authenticate(username, password):
+    teachers = list(mycol_teachers.find())
+    for i in teachers:
+        user = User((len(users)+1), i.get("username",""), i.get("password",""))
+        users.append(user)
+    for i in users:
+        print (i)
+    username_mapping = {u.username: u for u in users}
     user = username_mapping.get(username, None)
     print(user)
     if user and safe_str_cmp(user.password, str(sha256(password.encode("utf-8")).hexdigest())): 
         return user
 
 def identity(payload):
+    for i in teachers:
+        user = User((len(users)+1), i.get("username",""), i.get("password",""))
+        users.append(user)
+    userid_mapping = {u.id: u for u in users}
     user_id = payload["identity"]
     print("user_id")
     return userid_mapping.get(user_id, None)
