@@ -3,6 +3,7 @@ from flask_restful import Resource, Api
 from security import identity, authenticate
 from flask_jwt import JWT, jwt_required, current_identity
 import Courses, Teachers
+import os
 
 app = Flask(__name__)
 app.secret_key = "VERY-CONFIDENTAL"
@@ -22,4 +23,6 @@ api.add_resource(Teachers.TeachersList, "/teachers")
 api.add_resource(Teachers.TeacherSalary, "/salary/<string:username>")
 api.add_resource(Teachers.TeacherCourse, "/teacher") 
 
-app.run(port=5000, debug=True)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
