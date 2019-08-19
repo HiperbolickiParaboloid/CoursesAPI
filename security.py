@@ -21,8 +21,8 @@ for i in teachers:
 for i in users:
     print (i)
 '''
-username_mapping = {u.username: u for u in users}
-userid_mapping = {u.id: u for u in users}
+#username_mapping = {u.username: u for u in users}
+#userid_mapping = {u.id: u for u in users}
 
 def authenticate(username, password):
     user = mycol_teachers.find_one({"username": username})   #username_mapping.get(username, None)
