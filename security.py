@@ -32,8 +32,8 @@ def authenticate(username, password):
 
 def identity(payload):
     user_id = payload["identity"]
-    #for teacher in mycol_teachers.find():
-     #   if teacher["_id"] == 
     print("user_id")
-    return user_id         #userid_mapping.get(user_id, None)
+    return user_id        
+    
+#userid_mapping.get(user_id, None)
 
