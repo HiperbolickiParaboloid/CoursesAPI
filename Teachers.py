@@ -199,6 +199,7 @@ class Teacher(Resource):
                                     if request_data["delete_courses"] == "y":
                                         for course_id in teacher["course"]: 
                                             call=Courses.CourseID()
+                                            
                                             call.delete(course_id)
                                     else:
                                         append_to_course = 1
