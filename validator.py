@@ -13,7 +13,7 @@ def pswd_check(pswd):
                 if num and low and upp: return True
     return False
 def eml_check(email):
-    myclient = pymongo.MongoClient("mongodb://localhost:27017/")
+    myclient = pymongo.MongoClient("mongodb+srv://mirko:admin@scrapermirko-3rjq2.mongodb.net/test?retryWrites=true&w=majority")
     mydb = myclient["CoursesAPI"]
     if "teachers" in mydb.list_collection_names():
         if type(email) != list:
