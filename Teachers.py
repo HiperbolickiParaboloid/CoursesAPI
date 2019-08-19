@@ -198,7 +198,8 @@ class Teacher(Resource):
                                 if "delete_courses" in request_data.keys():
                                     if request_data["delete_courses"] == "y":
                                         for course_id in teacher["course"]: 
-                                           mycol_courses.update({"_id" : course_id}, {"$unset": {"teacher" : "" }})                                         
+                                           mycol_courses.update({"_id" : course_id}, {"$unset": {"teacher" : "" }}) 
+                                        mycol_teachers.update({"username": username}, {"$unset": {"course" : "" }})                                        
                                     else:
                                         append_to_course = 1
                                 else:
