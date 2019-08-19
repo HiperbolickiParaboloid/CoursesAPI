@@ -1,3 +1,4 @@
+
 # function for checking name input in Courses collection
 def set_name(name):
     if len(name) < 3 or len(name) > 15:
