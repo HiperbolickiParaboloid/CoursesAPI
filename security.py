@@ -29,6 +29,7 @@ def authenticate(username, password):
         return user
 
 def identity(payload):
+    teachers = list(mycol_teachers.find())
     for i in teachers:
         user = User((len(users)+1), i.get("username",""), i.get("password",""))
         users.append(user)
