@@ -56,5 +56,6 @@ def valid(data):
 
         else:
             return False
-    except:
+    except Exception as e:
+        print (str(e))
         return False

@@ -81,7 +81,7 @@ class Teacher(Resource):
             if current_identity.username == "admin" or current_teacher.get("role") == 1:
                 request_data = request.get_json()
                 print (request_data)
-                if request_data:
+                if valid(request_data):
                     new_teacher = {
                         "username": request_data["username"],
                         "password": funct.encoding(request_data["password"]),
