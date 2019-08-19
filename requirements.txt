@@ -1,6 +1,7 @@
 aniso8601==7.0.0
 bson==0.5.8
 Click==7.0
+dnspython==1.16.0
 Flask==1.1.1
 Flask-JWT==0.3.2
 Flask-RESTful==0.3.7
