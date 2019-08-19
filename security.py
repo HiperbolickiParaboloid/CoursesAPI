@@ -10,7 +10,7 @@ class User():
     def __str__(self):
         return f'username: {self.username}, password: {self.password}, _id: {self.id}'
 
-'''
+
 br = 1
 users = [ User(1, "admin", str(sha256("admin".encode("utf-8")).hexdigest()))
 ]
@@ -20,20 +20,18 @@ for i in teachers:
     users.append(user)
 for i in users:
     print (i)
-'''
-#username_mapping = {u.username: u for u in users}
-#userid_mapping = {u.id: u for u in users}
+
+username_mapping = {u.username: u for u in users}
+userid_mapping = {u.id: u for u in users}
 
 def authenticate(username, password):
-    user = mycol_teachers.find_one({"username": username})   #username_mapping.get(username, None)
+    user = username_mapping.get(username, None)
     print(user)
-    if user and safe_str_cmp(user["password"], str(sha256(password.encode("utf-8")).hexdigest())): 
+    if user and safe_str_cmp(user.password, str(sha256(password.encode("utf-8")).hexdigest())): 
         return user
 
 def identity(payload):
     user_id = payload["identity"]
     print("user_id")
-    return user_id        
-    
-#userid_mapping.get(user_id, None)
+    return userid_mapping.get(user_id, None)
 
