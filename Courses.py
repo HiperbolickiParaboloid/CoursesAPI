@@ -256,18 +256,20 @@ class CourseID(Resource):       #returns course for specified id
     @jwt_required()
     def delete(self, _id):
         try:
-                course = mycol_courses.find_one({"_id": ObjectId(_id)})
-                if not course:
-                    return {"message": "Course with this ID not found."}, 404
+            if type(_id) == str:
+                _id = ObjectId(_id)
+            course = mycol_courses.find_one({"_id": _id})
+            if not course:
+                return {"message": "Course with this ID not found."}, 404
+            else:
+                current_teacher = mycol_teachers.find_one({"username": current_identity.username})
+                teachers_id = current_teacher.get("_id")
+                course_id = course.get("teacher")
+                if teachers_id != course_id:
+                    return {"message": "You can edit only your courses. Please verify your credentials, or course ID."}, 404
                 else:
-                    current_teacher = mycol_teachers.find_one({"username": current_identity.username})
-                    teachers_id = current_teacher.get("_id")
-                    course_id = course.get("teacher")
-                    if teachers_id != course_id:
-                        return {"message": "You can edit only your courses. Please verify your credentials, or course ID."}, 404
-                    else:
-                        mycol_courses.find_one_and_delete({"_id": ObjectId(_id)})
-                        return {"message": "Course deleted."}, 200
+                    mycol_courses.find_one_and_delete({"_id": ObjectId(_id)})
+                    return {"message": "Course deleted."}, 200
         except Exception as e:
             return {"error": str(e)}, 400
 
