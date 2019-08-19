@@ -191,18 +191,19 @@ class Teacher(Resource):
                         
                         if updated_teacher["role"]==1:
                             email_helper.receivers(updated_teacher["email"])
-                        append_to_course = 0
-                        if "delete_courses" in request_data.keys():
-                            if request_data["delete_courses"] == "y":
-                                for course_id in teacher["course"]: 
-                                    call=Courses.CourseID()
-                                    call.delete(course_id)
-                            else:
-                                append_to_course = 1
-                        else:
-                            append_to_course = 1    
+
                         if request_data["course"]:
-                             
+                            append_to_course = 0
+                            if "course" in teacher.keys(): 
+                                if "delete_courses" in request_data.keys():
+                                    if request_data["delete_courses"] == "y":
+                                        for course_id in teacher["course"]: 
+                                            call=Courses.CourseID()
+                                            call.delete(course_id)
+                                    else:
+                                        append_to_course = 1
+                                else:
+                                    append_to_course = 1     
                             course=make_str_dict(request_data["course"])
                             updated_teacher.update({"course":course})
                             if append_to_course:
