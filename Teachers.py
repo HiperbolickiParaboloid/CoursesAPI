@@ -80,6 +80,7 @@ class Teacher(Resource):
             current_teacher = mycol_teachers.find_one({"username": current_identity.username})
             if current_identity.username == "admin" or current_teacher.get("role") == 1:
                 request_data = request.get_json()
+                print (request_data)
                 if valid(request_data):
                     new_teacher = {
                         "username": request_data["username"],
