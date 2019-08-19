@@ -12,7 +12,7 @@ from flask_jwt import JWT, jwt_required, current_identity
 
 
 
-myclient = pymongo.MongoClient("mongodb://localhost:27017/")
+myclient = pymongo.MongoClient("mongodb+srv://mirko:admin@scrapermirko-3rjq2.mongodb.net/test?retryWrites=true&w=majority")
 mydb = myclient["CoursesAPI"]
 
 req = {
