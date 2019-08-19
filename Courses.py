@@ -266,6 +266,12 @@ class CourseID(Resource):       #returns course for specified id
                 if teachers_id != course_id:
                     return {"message": "You can edit only your courses. Please verify your credentials, or course ID."}, 404
                 else:
+                    teachers_id =  course.get("teacher")
+                    teacher = mycol_teachers.find_one({"_id": teachers_id})
+                    courses_list = teacher.get("course")
+                    course_id = course.get("_id")
+                    courses_list.remove(course_id)
+                    mycol_teachers.find_one_and_update({"_id": teachers_id}, {"$set": {"course": courses_list}})
                     mycol_courses.find_one_and_delete({"_id": ObjectId(_id)})
                     return {"message": "Course deleted."}, 200
         except Exception as e:
