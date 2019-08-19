@@ -35,5 +35,5 @@ def identity(payload):
     #for teacher in mycol_teachers.find():
      #   if teacher["_id"] == 
     print("user_id")
-    return mycol_teachers.find_one({"_id": ObjectId(_id)})["_id"]         #userid_mapping.get(user_id, None)
+    return user_id         #userid_mapping.get(user_id, None)
 
